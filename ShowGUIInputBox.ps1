@@ -1,4 +1,4 @@
-﻿Function Show-GUIInputBox
+Function Show-GUIInputBox
 {
     param([string]$Caption="Type something:",[string]$Title="Input Box")
     
@@ -57,5 +57,4 @@ $objForm.Add_Shown({$objForm.Activate()})
 [void] $objForm.ShowDialog()
 
 $script:x
-#Test Change Directly to File
 }
