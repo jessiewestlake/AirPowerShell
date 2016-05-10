@@ -1,60 +1,121 @@
-Function Show-GUIInputBox
+﻿<#
+.SYNOPSIS
+   Opens a graphical text-input dialog box.
+.DESCRIPTION
+   Uses the System.Windows.Forms class to generate a custom Form object to display a GUI. The GUI allows 
+   input of a text string and returns that information to the pipeline.
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+.INPUTS
+   None, or named String objects representating the Caption and/or Title parameter values.
+.OUTPUTS
+   A System.String object representating the entered text. Will return exceptions if the dialog is terminated.
+.NOTES
+   Author: TSgt J. Jessie Westlake
+.COMPONENT
+   NONE
+.ROLE
+   GUI
+.FUNCTIONALITY
+   Opens a GUI to input text and return it as a String.
+#>
+function Show-GUIInputBox
 {
-    param([string]$Caption="Type something:",[string]$Title="Input Box")
-    
-Add-Type -AssemblyName 'System.Drawing'
-Add-Type -AssemblyName 'System.Windows.Forms'
+    [CmdletBinding(HelpUri = 'https://github.com/jessiewestlake')]
+    [Alias('InputBox')]
+    [OutputType([String])]
+    Param
+    (
+        # Determines the text displayed in the dialog box. The default is "Type something:".
+        [Parameter(ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Description','Message')] 
+        [String]
+        $Caption = 'Type something:',
 
-$script:x = $null
+        # Determines the title text displayed at the top bar of the dialog box. The default is "Input Box".
+        [Parameter(ValueFromPipelineByPropertyName=$true,
+                   Position=1)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Title = 'Input Box'
+    )
 
-$objForm = New-Object System.Windows.Forms.Form 
-$objForm.Text = $Title
-$objForm.Size = New-Object System.Drawing.Size(300,200) 
-$objForm.StartPosition = "CenterScreen"
+    Begin
+    {
+        Add-Type -AssemblyName 'System.Drawing'
+        Add-Type -AssemblyName 'System.Windows.Forms'
+    }
+    Process
+    {
+        $Form = New-Object System.Windows.Forms.Form 
+        $Form.Size = New-Object System.Drawing.Size(300,200) 
+        $Form.StartPosition = "CenterScreen"
+        $Form.Text = $Title
+        $Form.Topmost = $True
+        $Form.Add_Shown({ $Form.Activate() })
 
-$objForm.KeyPreview = $True
-$objForm.Add_KeyDown({if ($_.KeyCode -eq "Enter") 
-    {$script:x=$objTextBox.Text;$objForm.Close()}})
-$objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape") 
-    {$objForm.Close()}})
 
-$OKButton = New-Object System.Windows.Forms.Button
-$OKButton.Location = New-Object System.Drawing.Size(75,120)
-$OKButton.Size = New-Object System.Drawing.Size(75,23)
-$OKButton.Text = "OK"
-$OKButton.TabStop = $True
-$OKButton.TabIndex = 1
-$OKButton.Add_Click({$script:x=$objTextBox.Text;$objForm.Close()})
-$OKButton.Enabled = $False
-$objForm.Controls.Add($OKButton)
+        $Label = New-Object System.Windows.Forms.Label
+        $Label.Location = New-Object System.Drawing.Size(10,20) 
+        $Label.Size = New-Object System.Drawing.Size(280,20) 
+        $Label.Text = $Caption
+        $Form.Controls.Add($Label)
 
-$CancelButton = New-Object System.Windows.Forms.Button
-$CancelButton.Location = New-Object System.Drawing.Size(150,120)
-$CancelButton.Size = New-Object System.Drawing.Size(75,23)
-$CancelButton.Text = "Cancel"
-$CancelButton.TabStop = $True
-$CancelButton.TabIndex = 2
-$CancelButton.Add_Click({$objForm.Close()})
-$objForm.Controls.Add($CancelButton)
 
-$objLabel = New-Object System.Windows.Forms.Label
-$objLabel.Location = New-Object System.Drawing.Size(10,20) 
-$objLabel.Size = New-Object System.Drawing.Size(280,20) 
-$objLabel.Text = $Caption
-$objForm.Controls.Add($objLabel) 
+        $TextBox = New-Object System.Windows.Forms.TextBox 
+        $TextBox.Location = New-Object System.Drawing.Size(10,40) 
+        $TextBox.Size = New-Object System.Drawing.Size(260,20)
+        $TextBox.TabStop = $True
+        $TextBox.TabIndex = 0
+        $TextBox.Add_TextChanged({ If($TextBox.TextLength -gt 0){$OKButton.Enabled = $True} Else{$OKButton.Enabled = $False} })
+        $Form.Controls.Add($TextBox) 
 
-$objTextBox = New-Object System.Windows.Forms.TextBox 
-$objTextBox.Location = New-Object System.Drawing.Size(10,40) 
-$objTextBox.Size = New-Object System.Drawing.Size(260,20)
-$objTextBox.TabStop = $True
-$objTextBox.TabIndex = 0
-$objTextBox.Add_TextChanged({If($objTextBox.TextLength -gt 0){$OKButton.Enabled = $True} Else{$OKButton.Enabled = $False}})
-$objForm.Controls.Add($objTextBox) 
 
-$objForm.Topmost = $True
+        $OKButton = New-Object System.Windows.Forms.Button
+        $OKButton.Location = New-Object System.Drawing.Size(75,120)
+        $OKButton.Size = New-Object System.Drawing.Size(75,23)
+        $OKButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $OKButton.Text = 'OK'
+        $OKButton.Enabled = $False
+        $OKButton.TabStop = $True
+        $OKButton.TabIndex = 1
+        $Form.AcceptButton = $OKButton
+        $Form.Controls.Add($OKButton)
 
-$objForm.Add_Shown({$objForm.Activate()})
-[void] $objForm.ShowDialog()
 
-$script:x
+        $CancelButton = New-Object System.Windows.Forms.Button
+        $CancelButton.Location = New-Object System.Drawing.Size(150,120)
+        $CancelButton.Size = New-Object System.Drawing.Size(75,23)
+        $CancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        $CancelButton.Text = 'Cancel'
+        $CancelButton.TabStop = $True
+        $CancelButton.TabIndex = 2
+        $Form.CancelButton = $CancelButton
+        $Form.Controls.Add($CancelButton)
+
+
+        $ButtonPressed = $Form.ShowDialog()
+
+        If ($ButtonPressed -eq 'OK')
+        {
+            Write-Output $TextBox.Text
+        }
+        ElseIf ($ButtonPressed -eq 'Cancel')
+        {
+            Throw 'Operation cancelled by user.'
+        }
+        Else
+        {
+            Throw 'Operation was interrupted unexpectedly.'
+        }
+
+        $Form.Dispose()
+    }
+    End
+    {
+    }
 }

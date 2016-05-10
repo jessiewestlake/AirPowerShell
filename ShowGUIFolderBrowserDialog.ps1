@@ -7,29 +7,29 @@
 .EXAMPLE
    Show-GUIFolderBrowserDialog
 
-   Opens a folder selection GUI with the default description/prompt and default root folder selected.
+   Opens a folder selection GUI with the default caption/description and default root folder selected.
 .EXAMPLE
-   Show-GUIFolderBrowserDialog -Description 'Choose a folder to save the log file' -RootFolder 'MyDocuments' -ShowNewFolderButton
+   Show-GUIFolderBrowserDialog -Caption 'Choose a folder to save the log file' -RootFolder 'MyDocuments' -ShowNewFolderButton
 
-   Displays the folder selection GUI with a custom description, the user Documents folder as the root folder, 
+   Displays the folder selection GUI with a custom caption, the user Documents folder as the root folder, 
    and the New Folder button enabled allowing a user to create a new folder from the dialog.
 .INPUTS
-   None, or a named String object representating the Description parameter.
+   None, or a named String object representating the Caption parameter.
 .OUTPUTS
    A System.String object representating the full path to the selected folder. Will return exceptions if the 
    dialog is terminated.
 .NOTES
-
+   Author: TSgt J. Jessie Westlake
 .COMPONENT
    None
 .ROLE
-   None
+   GUI
 .FUNCTIONALITY
    Opens a GUI to select a folder and return its full path as a String.
 #>
 function Show-GUIFolderBrowserDialog
 {
-    [CmdletBinding()]
+    [CmdletBinding(HelpUri = 'https://github.com/jessiewestlake')]
     [Alias('SelectFolder')]
     [OutputType([String])]
     Param
@@ -41,7 +41,7 @@ function Show-GUIFolderBrowserDialog
         [ValidateNotNullOrEmpty()]
         [Alias('Prompt')]
         [String]
-        $Description = 'Select Folder',
+        $Caption = 'Select Folder',
 
         # Determines the root folder of the selection dialog. The parameter enumerates all of the acceptable values. The default is "Desktop".
         [Parameter(Position=1)]
@@ -62,7 +62,7 @@ function Show-GUIFolderBrowserDialog
     {
         $Form = New-Object System.Windows.Forms.FolderBrowserDialog
 
-        $Form.Description = $Description
+        $Form.Description = $Caption
         $Form.RootFolder = $RootFolder
         $Form.ShowNewFolderButton = $ShowNewFolderButton
 
