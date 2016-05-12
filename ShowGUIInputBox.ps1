@@ -2,8 +2,7 @@
 .SYNOPSIS
    Opens a graphical text-input dialog box.
 .DESCRIPTION
-   Uses the System.Windows.Forms class to generate a custom Form object to display a GUI. The GUI allows 
-   input of a text string and returns that information to the pipeline.
+   Uses the System.Windows.Forms class to generate a custom Form object to display a GUI. The GUI allows input of a text string and returns that information to the pipeline. The user cannot continue if the text box is blank.
 .EXAMPLE
    Example of how to use this cmdlet
 .EXAMPLE
@@ -28,20 +27,39 @@ function Show-GUIInputBox
     [OutputType([String])]
     Param
     (
-        # Determines the text displayed in the dialog box. The default is "Type something:".
-        [Parameter(ValueFromPipelineByPropertyName=$true,
+        # Sets the title text displayed at the top bar of the dialog box.
+        [Parameter(ValueFromPipelineByPropertyName=$True,
+                   Position=1)]
+        [ValidateNotNull()]
+        [String]
+        $Title = 'Input Box',
+
+        # Sets the message displayed in the dialog box.
+        [Parameter(ValueFromPipelineByPropertyName=$True,
                    Position=0)]
         [ValidateNotNullOrEmpty()]
         [Alias('Description','Message')] 
         [String]
         $Caption = 'Type something:',
 
-        # Determines the title text displayed at the top bar of the dialog box. The default is "Input Box".
-        [Parameter(ValueFromPipelineByPropertyName=$true,
-                   Position=1)]
-        [ValidateNotNullOrEmpty()]
+         # Determines the shape and design of the window border and title bar.
+        [Parameter()]
+        [ValidateNotNull()]
+        [System.Windows.Forms.FormBorderStyle]
+        $BorderStyle = 'FixedDialog',
+
+        # Adds a predefined value to the text box. The value can be edited or changed by the user after the dialog appears.
+        [Parameter(Position=2)]
         [String]
-        $Title = 'Input Box'
+        $DefaultText,
+
+        # Enables the minimize button and menu option for the dialog. Only relevant when the borderStyle would normally allow the ability to minimize. Disabled by default.
+        [Switch]
+        $EnableMinimize,
+
+        # Enables the maximize button and menu option for the dialog. Only relevant when the borderStyle would normally allow the ability to maximize. Disabled by default.
+        [Switch]
+        $EnableMaximize
     )
 
     Begin
@@ -52,35 +70,48 @@ function Show-GUIInputBox
     Process
     {
         $Form = New-Object System.Windows.Forms.Form 
-        $Form.Size = New-Object System.Drawing.Size(300,200) 
+        $Form.ClientSize = '300,150'
+        $Form.MinimumSize = '250,150'
         $Form.StartPosition = "CenterScreen"
         $Form.Text = $Title
+        $Form.FormBorderStyle = $BorderStyle
+        $Form.ControlBox = $True
+        $Form.MaximizeBox = $EnableMaximize
+        $Form.MinimizeBox = $EnableMinimize
         $Form.Topmost = $True
         $Form.Add_Shown({ $Form.Activate() })
 
 
         $Label = New-Object System.Windows.Forms.Label
-        $Label.Location = New-Object System.Drawing.Size(10,20) 
-        $Label.Size = New-Object System.Drawing.Size(280,20) 
+        $Label.Location = '10,25'
+        $Label.Size = '280,20'
+        $Label.Anchor = 'Left'
+        $Label.Margin = [System.Windows.Forms.Padding]::new(10,0,0,0)
         $Label.Text = $Caption
         $Form.Controls.Add($Label)
 
 
         $TextBox = New-Object System.Windows.Forms.TextBox 
-        $TextBox.Location = New-Object System.Drawing.Size(10,40) 
-        $TextBox.Size = New-Object System.Drawing.Size(260,20)
+        $TextBox.AutoSize = $True
+        $TextBox.Location = '10,60'
+        $TextBox.Size = '280,20'
+        $TextBox.Margin = '10,0,10,0'
+        $TextBox.Anchor = 'Left, Right'
         $TextBox.TabStop = $True
         $TextBox.TabIndex = 0
+        $TextBox.Text = $DefaultText
         $TextBox.Add_TextChanged({ If($TextBox.TextLength -gt 0){$OKButton.Enabled = $True} Else{$OKButton.Enabled = $False} })
         $Form.Controls.Add($TextBox) 
 
 
         $OKButton = New-Object System.Windows.Forms.Button
-        $OKButton.Location = New-Object System.Drawing.Size(75,120)
-        $OKButton.Size = New-Object System.Drawing.Size(75,23)
-        $OKButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $OKButton.Location = '65,110'
+        $OKButton.Size = '75,23'
+        $OKButton.Margin = '10,0,10,0'
+        $OKButton.Anchor = 'Bottom'
+        $OKButton.DialogResult = 'OK'
         $OKButton.Text = 'OK'
-        $OKButton.Enabled = $False
+        $OKButton.Enabled = $DefaultText
         $OKButton.TabStop = $True
         $OKButton.TabIndex = 1
         $Form.AcceptButton = $OKButton
@@ -88,9 +119,11 @@ function Show-GUIInputBox
 
 
         $CancelButton = New-Object System.Windows.Forms.Button
-        $CancelButton.Location = New-Object System.Drawing.Size(150,120)
-        $CancelButton.Size = New-Object System.Drawing.Size(75,23)
-        $CancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        $CancelButton.Location = '160,110'
+        $CancelButton.Size = '75,23'
+        $CancelButton.Margin = '10,0,10,0'
+        $CancelButton.Anchor = 'Bottom'
+        $CancelButton.DialogResult = 'Cancel'
         $CancelButton.Text = 'Cancel'
         $CancelButton.TabStop = $True
         $CancelButton.TabIndex = 2
